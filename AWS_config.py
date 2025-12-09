@@ -37,3 +37,14 @@ class S3Config:
     def client(self) -> boto3.client:
         """Get the S3 client."""
         return self.__client
+
+s3_config = S3Config()
+s3_client = s3_config.client
+quarantine_bucket = s3_config.quarantine_bucket
+production_bucket = s3_config.production_bucket
+
+__all__ = [
+    "production_bucket",
+    "quarantine_bucket",
+    "s3_client",
+]

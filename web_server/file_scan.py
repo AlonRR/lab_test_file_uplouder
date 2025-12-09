@@ -4,3 +4,7 @@
 # if the file is clean upload to production bucket
 # if the file is infected upload to quarantine bucket and send alert email using email_alert.py
 # placeholder for file scanning functionality
+
+
+"""Import necessary modules for S3 interaction."""
+from AWS_config import production_bucket, quarantine_bucket, s3_client
