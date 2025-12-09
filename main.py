@@ -6,16 +6,18 @@ from web_server.app import start_server
 
 def pre_start_loads() -> S3Config:
     """Load S3 configuration and create client."""
-    return S3Config.load_s3_config()
+    return S3Config()
 
 
-def pre_start_checks() -> None:
+def pre_start_checks(s3_config: S3Config) -> None:
     """Perform pre-start checks for S3 connectivity."""
     try:
-        client.head_bucket()
-        print(f"S3 bucket '{bucket}' is accessible.")
+        s3_config.client.head_bucket()
+        print(f"S3 bucket '{s3_config.quarantine_bucket}' is accessible.")
     except Exception as e:
-        print(f"Error accessing S3 bucket '{bucket}': {e}")
+        print(
+            f"Error accessing S3 bucket '{s3_config.quarantine_bucket}': {e}",
+        )
         raise
     try:
         now = datetime.now(datetime.timezone.utc)
@@ -35,6 +37,6 @@ def start_process() -> None:
 
 
 if __name__ == "__main__":
-    client = pre_start_loads()
-    pre_start_checks()
+    s3_config = pre_start_loads()
+    pre_start_checks(s3_config)
     start_process()

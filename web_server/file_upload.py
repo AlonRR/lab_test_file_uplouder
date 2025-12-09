@@ -3,9 +3,9 @@ from pathlib import Path
 
 
 def upload_file_to_s3(
-    file_path,
-    s3_bucket,
-    s3_client,
+    file_path: str,
+    s3_bucket: str,
+    s3_client: any,
 ) -> None:
     """Upload file_path to S3.
 
@@ -22,7 +22,7 @@ def upload_file_to_s3(
     try:
         s3_client.put_object(Bucket=s3_bucket, Key=file_path)
         print(
-            f"File {file_path} uploaded to bucket {bucket} as {s3_key}.",
+            f"File {file_path} uploaded to bucket {s3_bucket} as {s3_key}.",
         )
     except Exception as e:
         print(f"Upload failed: {e}")
