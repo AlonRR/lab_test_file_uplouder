@@ -1,22 +1,25 @@
 from datetime import datetime
 
-from AWS_config import S3Config
+from AWS_config import production_bucket, quarantine_bucket, s3_client
 from web_server.app import start_server
 
 
-def pre_start_loads() -> S3Config:
-    """Load S3 configuration and create client."""
-    return S3Config()
-
-
-def pre_start_checks(s3_config: S3Config) -> None:
+def pre_start_checks() -> None:
     """Perform pre-start checks for S3 connectivity."""
     try:
-        s3_config.client.head_bucket()
-        print(f"S3 bucket '{s3_config.quarantine_bucket}' is accessible.")
+        s3_client.head_bucket(Bucket=quarantine_bucket)
+        print(f"S3 bucket '{quarantine_bucket}' is accessible.")
     except Exception as e:
         print(
-            f"Error accessing S3 bucket '{s3_config.quarantine_bucket}': {e}",
+            f"Error accessing S3 bucket '{quarantine_bucket}': {e}",
+        )
+        raise
+    try:
+        s3_client.head_bucket(Bucket=production_bucket)
+        print(f"S3 bucket '{production_bucket}' is accessible.")
+    except Exception as e:
+        print(
+            f"Error accessing S3 bucket '{production_bucket}': {e}",
         )
         raise
     try:
@@ -37,6 +40,5 @@ def start_process() -> None:
 
 
 if __name__ == "__main__":
-    s3_config = pre_start_loads()
-    pre_start_checks(s3_config)
+    pre_start_checks()
     start_process()
