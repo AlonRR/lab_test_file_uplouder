@@ -1,3 +1,10 @@
+# Needs to handle file upload requests and save files to UPLOAD_DIR defined in config.py
+# Also serves a simple HTML form for file uploads.
+
+
+# NEED to check current code for any missing parts or errors and fix them.
+# This was written by AI, use with caution and test thoroughly.
+
 import os
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from pathlib import Path
