@@ -1,30 +1,39 @@
 import os
 
 import boto3
-from dotenv import load_dotenv
+from dotenv import load_dotenv, remove_dotenv
 
 
-def load_s3_config() -> tuple:
-    """Load S3 configuration from .env file."""
-    load_dotenv()
-    bucket = os.getenv("S3_BUCKET")
-    access_key = os.getenv("S3_ACCESS_KEY")
-    secret_key = os.getenv("S3_SECRET_KEY")
-    region = os.getenv("S3_REGION")
+class S3Config:
+    """Class to hold S3 configuration."""
 
-    return bucket, access_key, secret_key, region
+    def __init__(self) -> None:
+        """Initialize S3Config with necessary parameters."""
+        load_dotenv()
+        access_key = os.getenv("S3_ACCESS_KEY")
+        secret_key = os.getenv("S3_SECRET_KEY")
+        region = os.getenv("S3_REGION")
+        self.__quarantine_bucket = os.getenv("QUARANTINE_BUCKET")
+        self.__production_bucket = os.getenv("PRODUCTION_BUCKET")
+        self.__client = boto3.client(
+            "s3",
+            aws_access_key_id=access_key,
+            aws_secret_access_key=secret_key,
+            region_name=region,
+        )
+        remove_dotenv()
 
+    @property
+    def quarantine_bucket(self) -> str:
+        """Get the quarantine bucket name."""
+        return self.__quarantine_bucket
 
-def s3_client() -> tuple:
-    """Create and return an S3 client using environment variables."""
-    bucket, access_key, secret_key, region = load_s3_config()
-    s3_client = boto3.client(
-        "s3",
-        aws_access_key_id=access_key,
-        aws_secret_access_key=secret_key,
-        region_name=region,
-    )
-    return (
-        s3_client,
-        bucket,
-    )
+    @property
+    def production_bucket(self) -> str:
+        """Get the production bucket name."""
+        return self.__production_bucket
+
+    @property
+    def client(self) -> boto3.client:
+        """Get the S3 client."""
+        return self.__client
