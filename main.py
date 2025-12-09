@@ -1,19 +1,18 @@
 from datetime import datetime
 
-from AWS_config import s3_client
+from AWS_config import S3Config
 from web_server.app import start_server
 
 
-def pre_start_loads() -> tuple:
+def pre_start_loads() -> S3Config:
     """Load S3 configuration and create client."""
-    client, bucket = s3_client()
-    return client, bucket
+    return S3Config.load_s3_config()
 
 
 def pre_start_checks() -> None:
     """Perform pre-start checks for S3 connectivity."""
     try:
-        client.head_bucket(Bucket=bucket)
+        client.head_bucket()
         print(f"S3 bucket '{bucket}' is accessible.")
     except Exception as e:
         print(f"Error accessing S3 bucket '{bucket}': {e}")
@@ -36,6 +35,6 @@ def start_process() -> None:
 
 
 if __name__ == "__main__":
-    client, bucket = pre_start_loads()
+    client = pre_start_loads()
     pre_start_checks()
     start_process()
