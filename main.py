@@ -1,6 +1,6 @@
-from datetime import datetime
+from datetime import UTC, datetime
 
-from AWS_config import production_bucket, quarantine_bucket, s3_client
+from aws_config import production_bucket, quarantine_bucket, s3_client
 from web_server.app import start_server
 
 
@@ -23,7 +23,7 @@ def pre_start_checks() -> None:
         )
         raise
     try:
-        now = datetime.now(datetime.timezone.utc)
+        now = datetime.now(tz=UTC)
         print(
             f"S3 connectivity check successful at {now.isoformat()} UTC.",
         )

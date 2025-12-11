@@ -1,7 +1,7 @@
 import os
 
 import boto3
-from dotenv import load_dotenv, remove_dotenv
+from dotenv import load_dotenv
 
 
 class S3Config:
@@ -21,7 +21,6 @@ class S3Config:
             aws_secret_access_key=secret_key,
             region_name=region,
         )
-        remove_dotenv()
 
     @property
     def quarantine_bucket(self) -> str:

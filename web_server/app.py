@@ -5,26 +5,44 @@
 # NEED to check current code for any missing parts or errors and fix them.
 # This was written by AI, use with caution and test thoroughly.
 
-import os
+import cgi
+import mimetypes
+import shutil
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from pathlib import Path
 
-from config import PORT, UPLOAD_DIR
+from .config import PORT, UPLOAD_DIR
 
 
 class FileUploadHandler(BaseHTTPRequestHandler):
     """Handle file upload requests."""
 
     def do_GET(self) -> None:
-        """Serve the index.html file."""
-        if self.path == "/":
-            self.path = "index.html"
+        """Serve files (index.html by default) from this module directory."""
+        base_dir = Path(__file__).parent.resolve()
+        req_path = self.path.lstrip("/") or "index.html"
+        target = (base_dir / req_path).resolve()
+
+        # Prevent path traversal
+        if not str(target).startswith(str(base_dir)):
+            self.send_response(403)
+            self.end_headers()
+            self.wfile.write(b"403 Forbidden")
+            return
+
+        if target.is_dir():
+            target = target / "index.html"
+
         try:
-            with Path(self.path[1:]).absolute().open("rb") as file:
+            with target.open("rb") as file:
                 self.send_response(200)
-                self.send_header("Content-type", "text/html")
+                ctype, _ = mimetypes.guess_type(str(target))
+                self.send_header(
+                    "Content-type",
+                    ctype or "application/octet-stream",
+                )
                 self.end_headers()
-                self.wfile.write(file.read())
+                shutil.copyfileobj(file, self.wfile)
         except FileNotFoundError:
             self.send_response(404)
             self.end_headers()
@@ -32,48 +50,67 @@ class FileUploadHandler(BaseHTTPRequestHandler):
 
     def do_POST(self) -> None:
         """Handle file upload via POST request."""
-        if self.path == "/upload":
-            content_length = int(self.headers["Content-Length"])
-            content_type = self.headers["Content-Type"]
+        if self.path != "/upload":
+            self.send_response(404)
+            self.end_headers()
+            self.wfile.write(b"Not Found")
+            return
 
-            # Ensure the request is multipart/form-data
-            if "multipart/form-data" in content_type:
-                boundary = content_type.split("boundary=")[-1].encode()
-                body = self.rfile.read(content_length)
+        # Use cgi.FieldStorage to parse multipart form data reliably
+        try:
+            content_type = self.headers.get("Content-Type", "")
+            if not content_type.startswith("multipart/form-data"):
+                raise ValueError(
+                    "Content-Type must be multipart/form-data",
+                )
 
-                # Parse the uploaded file
-                parts = body.split(b"--" + boundary)
-                for part in parts:
-                    if b"Content-Disposition" in part:
-                        headers, file_data = part.split(b"\r\n\r\n", 1)
-                        file_data = file_data.rstrip(b"\r\n--")
-                        disposition = headers.decode()
+            # Ensure Content-Length present
+            length = int(self.headers.get("Content-Length", 0))
 
-                        # Extract the filename
-                        if "filename=" in disposition:
-                            filename = (
-                                disposition.split("filename=")[-1]
-                                .split(";")[0]
-                                .strip('"')
-                            )
-                            file_path = os.path.join(UPLOAD_DIR, filename)
+            fs = cgi.FieldStorage(
+                fp=self.rfile,
+                headers=self.headers,
+                environ={"REQUEST_METHOD": "POST"},
+                keep_blank_values=True,
+            )
 
-                            # Save the file
-                            os.makedirs(UPLOAD_DIR, exist_ok=True)
-                            with open(file_path, "wb") as f:
-                                f.write(file_data)
+            # Prefer field named 'file' but accept any file field
+            file_field = None
+            if "file" in fs and getattr(fs["file"], "filename", None):
+                file_field = fs["file"]
+            else:
+                for key in fs.keys():
+                    candidate = fs[key]
+                    if isinstance(candidate, cgi.FieldStorage) and getattr(
+                        candidate,
+                        "filename",
+                        None,
+                    ):
+                        file_field = candidate
+                        break
 
-                            self.send_response(200)
-                            self.end_headers()
-                            self.wfile.write(
-                                b"File uploaded successfully!"
-                            )
-                            return
+            if not file_field or not getattr(file_field, "filename", None):
+                self.send_response(400)
+                self.end_headers()
+                self.wfile.write(b"No file uploaded.")
+                return
 
-            # If the request is invalid
+            filename = Path(file_field.filename).name
+            Path(UPLOAD_DIR).mkdir(parents=True, exist_ok=True)
+            out_path = Path(UPLOAD_DIR) / filename
+            with out_path.open("wb") as out_file:
+                shutil.copyfileobj(file_field.file, out_file)
+
+            self.send_response(200)
+            self.end_headers()
+            self.wfile.write(b"File uploaded successfully!")
+            return
+
+        except Exception as exc:
             self.send_response(400)
             self.end_headers()
-            self.wfile.write(b"Invalid file upload request.")
+            msg = f"Upload failed: {exc}".encode("utf-8", errors="replace")
+            self.wfile.write(msg)
 
 
 def start_server() -> None:
