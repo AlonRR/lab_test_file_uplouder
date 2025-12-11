@@ -1,7 +1,7 @@
 """SMTP configuration helpers for alert emails."""
 
-from dataclasses import dataclass
 import os
+from dataclasses import dataclass
 from typing import List, Optional
 
 from dotenv import load_dotenv
@@ -45,13 +45,17 @@ def load_smtp_settings() -> SMTPSettings:
     use_starttls = _as_bool(os.getenv("SMTP_STARTTLS", "true"), default=True)
 
     if not host:
-        raise ValueError("SMTP_HOST is required for sending alert emails.")
+        msg = "SMTP_HOST is required for sending alert emails."
+        raise ValueError(msg)
     if not port:
-        raise ValueError("SMTP_PORT is required for sending alert emails.")
+        msg = "SMTP_PORT is required for sending alert emails."
+        raise ValueError(msg)
     if not sender:
-        raise ValueError("SMTP_SENDER is required for sending alert emails.")
+        msg = "SMTP_SENDER is required for sending alert emails."
+        raise ValueError(msg)
     if not recipients:
-        raise ValueError("ALERT_RECIPIENTS must include at least one address.")
+        msg = "ALERT_RECIPIENTS must include at least one address."
+        raise ValueError(msg)
 
     return SMTPSettings(
         host=host,

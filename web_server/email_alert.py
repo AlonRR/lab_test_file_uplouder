@@ -2,8 +2,9 @@
 
 from datetime import UTC, datetime
 from email.message import EmailMessage
-import smtplib
 from pathlib import Path
+
+import aiosmtplib
 
 from .email_config import SMTPSettings, load_smtp_settings
 
@@ -37,7 +38,7 @@ def _build_email_message(
     return msg
 
 
-def send_alert_email(
+async def send_alert_email(
     file_path: str,
     quarantine_bucket: str,
     s3_key: str,
@@ -52,12 +53,27 @@ def send_alert_email(
     )
 
     try:
-        with smtplib.SMTP(settings.host, settings.port, timeout=15) as smtp:
-            if settings.use_starttls:
-                smtp.starttls()
-            if settings.username:
-                smtp.login(settings.username, settings.password or "")
-            smtp.send_message(message)
+        # Port 465 uses implicit TLS, port 587 uses STARTTLS
+        use_tls = settings.port == 465
+
+        smtp = aiosmtplib.SMTP(
+            hostname=settings.host,
+            port=settings.port,
+            timeout=15,
+            use_tls=use_tls,
+        )
+        await smtp.connect()
+        print("Connected to SMTP server.")
+
+        # Only use STARTTLS if not already using TLS and if configured
+        if not use_tls and settings.use_starttls:
+            await smtp.starttls()
+
+        # Only authenticate if username is provided and non-empty
+        if settings.username and settings.username.strip():
+            await smtp.login(settings.username, settings.password or "")
+        await smtp.send_message(message)
+        await smtp.quit()
         print(
             f"Alert email sent for {s3_key} to {', '.join(settings.recipients)}.",
         )
