@@ -12,6 +12,7 @@ from http.server import BaseHTTPRequestHandler, HTTPServer
 from pathlib import Path
 
 from .config import PORT, UPLOAD_DIR
+from .file_scan import process_file
 
 
 class FileUploadHandler(BaseHTTPRequestHandler):
@@ -89,13 +90,16 @@ class FileUploadHandler(BaseHTTPRequestHandler):
                         file_field = candidate
                         break
 
-            if not file_field or not getattr(file_field, "filename", None):
+            # Normalize and validate filename explicitly to avoid
+            # ambiguous truthiness checks on FieldStorage objects.
+            filename = getattr(file_field, "filename", None)
+            if not filename:
                 self.send_response(400)
                 self.end_headers()
                 self.wfile.write(b"No file uploaded.")
                 return
 
-            filename = Path(file_field.filename).name
+            filename = Path(filename).name
             Path(UPLOAD_DIR).mkdir(parents=True, exist_ok=True)
             out_path = Path(UPLOAD_DIR) / filename
             with out_path.open("wb") as out_file:
@@ -104,7 +108,7 @@ class FileUploadHandler(BaseHTTPRequestHandler):
             self.send_response(200)
             self.end_headers()
             self.wfile.write(b"File uploaded successfully!")
-            return
+            process_file(str(out_path))
 
         except Exception as exc:
             self.send_response(400)

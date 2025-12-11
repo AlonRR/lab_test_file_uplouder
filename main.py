@@ -1,36 +1,26 @@
 from datetime import UTC, datetime
 
-from aws_config import production_bucket, quarantine_bucket, s3_client
+# from aws_config import (
+#     production_bucket,
+#     quarantine_bucket,
+#     s3_client,
+#     temporary_bucket,
+# )
 from web_server.app import start_server
 
 
-def pre_start_checks() -> None:
-    """Perform pre-start checks for S3 connectivity."""
-    try:
-        s3_client.head_bucket(Bucket=quarantine_bucket)
-        print(f"S3 bucket '{quarantine_bucket}' is accessible.")
-    except Exception as e:
-        print(
-            f"Error accessing S3 bucket '{quarantine_bucket}': {e}",
-        )
-        raise
-    try:
-        s3_client.head_bucket(Bucket=production_bucket)
-        print(f"S3 bucket '{production_bucket}' is accessible.")
-    except Exception as e:
-        print(
-            f"Error accessing S3 bucket '{production_bucket}': {e}",
-        )
-        raise
-    try:
-        now = datetime.now(tz=UTC)
-        print(
-            f"S3 connectivity check successful at {now.isoformat()} UTC.",
-        )
-    except Exception as e:
-        print(f"Error fetching time from S3: {e}")
-        raise
-    print("Pre-start checks completed successfully.")
+# def pre_start_checks() -> None:
+#     """Perform pre-start checks for S3 connectivity."""
+
+#     try:
+#         now = datetime.now(tz=UTC)
+#         print(
+#             f"S3 connectivity check successful at {now.isoformat()} UTC.",
+#         )
+#     except Exception as e:
+#         print(f"Error fetching time from S3: {e}")
+#         raise
+#     print("Pre-start checks completed successfully.")
 
 
 def start_process() -> None:
@@ -40,5 +30,5 @@ def start_process() -> None:
 
 
 if __name__ == "__main__":
-    pre_start_checks()
+    # pre_start_checks()
     start_process()
