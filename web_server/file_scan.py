@@ -10,7 +10,6 @@
 
 from pathlib import Path
 
-
 from aws_config import (
     production_bucket,
     quarantine_bucket,
@@ -64,7 +63,7 @@ def scan_file(file_path: str) -> bool:
         print(f"Exception during file scan: {e}")
 
 
-def process_file(file_path: str) -> None:
+async def process_file(file_path: str) -> None:
     """Process the file after receiving by scanning and moving to appropriate S3 bucket.
 
     Args:
@@ -86,5 +85,5 @@ def process_file(file_path: str) -> None:
             file_s3_key,
             s3_client,
         )
-        send_alert_email(file_path, quarantine_bucket, file_s3_key)
+        await send_alert_email(file_path, quarantine_bucket, file_s3_key)
     Path(file_path).unlink()

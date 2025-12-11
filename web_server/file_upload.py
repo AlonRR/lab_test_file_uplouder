@@ -1,4 +1,4 @@
-from datetime import datetime, UTC
+from datetime import UTC, datetime
 from pathlib import Path
 
 
@@ -15,10 +15,6 @@ def upload_file_to_s3(
         s3_client: Boto3 S3 client instance.
     """
     basename = Path(file_path).name
-    # name, ext = Path(basename).stem, Path(basename).suffix
-    # time_stamp = datetime.now(tz=UTC).strftime("%Y%m%d%H%M%S")
-    # s3_key = f"{name}_{time_stamp}{ext}"
-
     try:
         s3_client.upload_file(file_path, s3_bucket, basename)
         print(
@@ -50,7 +46,7 @@ def move_file_between_buckets(
                 "Key": file_s3_key,
             },
             Bucket=destination_bucket,
-            Key=destination_bucket,
+            Key=file_s3_key,
         )
         s3_client.delete_object(Bucket=source_bucket, Key=file_s3_key)
         print(

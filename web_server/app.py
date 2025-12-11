@@ -5,6 +5,7 @@
 # NEED to check current code for any missing parts or errors and fix them.
 # This was written by AI, use with caution and test thoroughly.
 
+import asyncio
 import cgi
 import mimetypes
 import shutil
@@ -61,12 +62,13 @@ class FileUploadHandler(BaseHTTPRequestHandler):
         try:
             content_type = self.headers.get("Content-Type", "")
             if not content_type.startswith("multipart/form-data"):
+                msg = "Content-Type must be multipart/form-data"
                 raise ValueError(
-                    "Content-Type must be multipart/form-data",
+                    msg,
                 )
 
             # Ensure Content-Length present
-            length = int(self.headers.get("Content-Length", 0))
+            # length = int(self.headers.get("Content-Length", 0))
 
             fs = cgi.FieldStorage(
                 fp=self.rfile,
@@ -108,7 +110,7 @@ class FileUploadHandler(BaseHTTPRequestHandler):
             self.send_response(200)
             self.end_headers()
             self.wfile.write(b"File uploaded successfully!")
-            process_file(str(out_path))
+            asyncio.run(process_file(str(out_path)))
 
         except Exception as exc:
             self.send_response(400)
