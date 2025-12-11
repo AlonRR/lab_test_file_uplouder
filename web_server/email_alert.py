@@ -1,6 +1,65 @@
-# Need a function to send alert emails after an infected file is detected and quarantined.
-# This function will be called from file_scan.py when a file is found to be infected.
-# placeholder for email alert functionality
+"""Email alert helper for infected file quarantine."""
 
-def send_alert_email () -> None:
-    """Palceholder function for sending alert emails."""
+from datetime import UTC, datetime
+from email.message import EmailMessage
+import smtplib
+from pathlib import Path
+
+from .email_config import SMTPSettings, load_smtp_settings
+
+
+def _build_email_message(
+    settings: SMTPSettings,
+    file_path: str,
+    quarantine_bucket: str,
+    s3_key: str,
+) -> EmailMessage:
+    """Construct the alert email message body."""
+    timestamp = datetime.now(tz=UTC).isoformat()
+    filename = Path(file_path).name
+
+    msg = EmailMessage()
+    msg["Subject"] = f"[Alert] Infected file quarantined: {filename}"
+    msg["From"] = settings.sender
+    msg["To"] = ", ".join(settings.recipients)
+
+    msg.set_content(
+        (
+            "An infected file was detected and quarantined.\n\n"
+            f"File name: {filename}\n"
+            f"Quarantine bucket: {quarantine_bucket}\n"
+            f"S3 object key: {s3_key}\n"
+            f"Local path: {file_path}\n"
+            f"Detected at: {timestamp}\n\n"
+            "Please review and take action as needed."
+        ),
+    )
+    return msg
+
+
+def send_alert_email(
+    file_path: str,
+    quarantine_bucket: str,
+    s3_key: str,
+) -> None:
+    """Send an alert email about a quarantined file."""
+    settings = load_smtp_settings()
+    message = _build_email_message(
+        settings,
+        file_path,
+        quarantine_bucket,
+        s3_key,
+    )
+
+    try:
+        with smtplib.SMTP(settings.host, settings.port, timeout=15) as smtp:
+            if settings.use_starttls:
+                smtp.starttls()
+            if settings.username:
+                smtp.login(settings.username, settings.password or "")
+            smtp.send_message(message)
+        print(
+            f"Alert email sent for {s3_key} to {', '.join(settings.recipients)}.",
+        )
+    except Exception as exc:
+        print(f"Failed to send alert email: {exc}")
