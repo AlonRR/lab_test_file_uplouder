@@ -10,3 +10,6 @@ wheels/
 .venv
 .env
 uv.lock
+
+# Uploaded files
+pending_files/*

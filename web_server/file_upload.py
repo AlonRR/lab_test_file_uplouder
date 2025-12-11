@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, UTC
 from pathlib import Path
 
 
@@ -6,7 +6,7 @@ def upload_file_to_s3(
     file_path: str,
     s3_bucket: str,
     s3_client: any,
-) -> None:
+) -> str:
     """Upload file_path to S3.
 
     Args:
@@ -16,14 +16,46 @@ def upload_file_to_s3(
     """
     basename = Path(file_path).name
     name, ext = Path(basename).stem, Path(basename).suffix
-    time_stamp = datetime.timezone.utc.strftime("%Y%m%d%H%M%S")
+    time_stamp = datetime.now(tz=UTC).strftime("%Y%m%d%H%M%S")
     s3_key = f"{name}_{time_stamp}{ext}"
 
     try:
-        s3_client.put_object(Bucket=s3_bucket, Key=file_path)
+        response=s3_client.put_object(Bucket=s3_bucket, Key=file_path)
         print(
             f"File {file_path} uploaded to bucket {s3_bucket} as {s3_key}.",
         )
     except Exception as e:
         print(f"Upload failed: {e}")
+        raise
+    return s3_key
+
+
+def move_file_between_buckets(
+    source_bucket: str,
+    destination_bucket: str,
+    file_s3_key: str,
+    s3_client: any,
+) -> None:
+    """Move a file from source_bucket to destination_bucket in S3.
+
+    Args:
+        source_bucket: The S3 bucket to move the file from.
+        destination_bucket: The S3 bucket to move the file to.
+        file_s3_key: The key of the file in S3.
+        s3_client: Boto3 S3 client instance.
+    """
+    try:
+        s3_client.copy_object(
+            CopySource={
+                "Bucket": source_bucket,
+                "Key": file_s3_key,
+            },
+            Bucket=destination_bucket,
+        )
+        s3_client.delete_object(Bucket=source_bucket, Key=file_s3_key)
+        print(
+            f"File {file_s3_key} moved from {source_bucket} to {destination_bucket}.",
+        )
+    except Exception as e:
+        print(f"Failed to move file {file_s3_key}: {e}")
         raise
