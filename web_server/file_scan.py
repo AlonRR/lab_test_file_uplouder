@@ -10,6 +10,7 @@
 
 from pathlib import Path
 
+
 from aws_config import (
     production_bucket,
     quarantine_bucket,
@@ -19,6 +20,22 @@ from aws_config import (
 
 from .email_alert import send_alert_email
 from .file_upload import move_file_between_buckets, upload_file_to_s3
+
+
+def file_contains_string(file_path: str, search_string: str) -> bool:
+    """Check if the file contains a specific string.
+
+    Args:
+        file_path: Path to the file to scan.
+        search_string: String to search for in the file.
+    Returns:
+        bool: True if string is found, False otherwise.
+    """
+    with Path(file_path).open("r") as f:
+        for line in f:
+            if search_string in line:
+                return True
+    return False
 
 
 def scan_file(file_path: str) -> bool:
@@ -32,7 +49,11 @@ def scan_file(file_path: str) -> bool:
     try:
         # Placeholder for actual scanning logic
         # For demonstration, let's assume files with '.pdf' are clean
-        if file_path.endswith(".pdf"):
+
+        if file_path.endswith(".pdf") and file_contains_string(
+            file_path,
+            "Blood Sample",
+        ):
             print(f"File {file_path} is clean.")
             return True
         else:

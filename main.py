@@ -8,7 +8,6 @@ from datetime import UTC, datetime
 # )
 from web_server.app import start_server
 
-
 # def pre_start_checks() -> None:
 #     """Perform pre-start checks for S3 connectivity."""
 
