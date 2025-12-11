@@ -49,8 +49,8 @@ def process_file(file_path: str) -> None:
     Args:
         file_path: Path to the uploaded file.
     """
-    file_s3_key = upload_file_to_s3(file_path, temporary_bucket, s3_client)
-
+    upload_file_to_s3(file_path, temporary_bucket, s3_client)
+    file_s3_key = Path(file_path).name
     if scan_file(file_path):
         move_file_between_buckets(
             temporary_bucket,
