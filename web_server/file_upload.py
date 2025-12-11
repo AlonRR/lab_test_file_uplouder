@@ -6,7 +6,7 @@ def upload_file_to_s3(
     file_path: str,
     s3_bucket: str,
     s3_client: any,
-) -> str:
+) -> None:
     """Upload file_path to S3.
 
     Args:
@@ -15,19 +15,18 @@ def upload_file_to_s3(
         s3_client: Boto3 S3 client instance.
     """
     basename = Path(file_path).name
-    name, ext = Path(basename).stem, Path(basename).suffix
-    time_stamp = datetime.now(tz=UTC).strftime("%Y%m%d%H%M%S")
-    s3_key = f"{name}_{time_stamp}{ext}"
+    # name, ext = Path(basename).stem, Path(basename).suffix
+    # time_stamp = datetime.now(tz=UTC).strftime("%Y%m%d%H%M%S")
+    # s3_key = f"{name}_{time_stamp}{ext}"
 
     try:
-        response=s3_client.put_object(Bucket=s3_bucket, Key=file_path)
+        s3_client.upload_file(file_path, s3_bucket, basename)
         print(
-            f"File {file_path} uploaded to bucket {s3_bucket} as {s3_key}.",
+            f"File {file_path} uploaded to bucket {s3_bucket} as {basename}.",
         )
     except Exception as e:
         print(f"Upload failed: {e}")
         raise
-    return s3_key
 
 
 def move_file_between_buckets(
@@ -51,6 +50,7 @@ def move_file_between_buckets(
                 "Key": file_s3_key,
             },
             Bucket=destination_bucket,
+            Key=destination_bucket,
         )
         s3_client.delete_object(Bucket=source_bucket, Key=file_s3_key)
         print(
